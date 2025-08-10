@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Plus, Edit, Eye, Palette, Star } from 'lucide-react'
+import { Search, Plus, Edit, Eye, Palette, Star, X } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Card } from '../../components/ui/Card'
+import { Modal } from '../../components/ui/Modal'
+import { supabase } from '../../lib/supabase'
 import { Fabric } from '../../types'
 
 export function AdminFabrics() {
@@ -12,6 +14,18 @@ export function AdminFabrics() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [materialFilter, setMaterialFilter] = useState('all')
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [editingFabric, setEditingFabric] = useState<Fabric | null>(null)
+  const [newFabric, setNewFabric] = useState({
+    name: '',
+    material: '',
+    price_per_meter: 0,
+    color: '',
+    stock: 0,
+    description: '',
+    featured: false,
+    images_json: ['']
+  })
 
   useEffect(() => {
     fetchFabrics()
@@ -23,50 +37,14 @@ export function AdminFabrics() {
 
   const fetchFabrics = async () => {
     try {
-      // Sample fabric data
-      const sampleFabrics = [
-        {
-          id: '1',
-          name: 'Premium Silk',
-          material: 'Silk',
-          price_per_meter: 2500,
-          color: 'Golden',
-          stock: 50,
-          images_json: ['https://images.pexels.com/photos/6069107/pexels-photo-6069107.jpeg'],
-          featured: true,
-          description: 'Luxurious silk fabric perfect for wedding wear and special occasions',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          name: 'Italian Wool',
-          material: 'Wool',
-          price_per_meter: 3200,
-          color: 'Navy Blue',
-          stock: 30,
-          images_json: ['https://images.pexels.com/photos/7679720/pexels-photo-7679720.jpeg'],
-          featured: true,
-          description: 'Premium Italian wool for sophisticated suits and formal wear',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '3',
-          name: 'Egyptian Cotton',
-          material: 'Cotton',
-          price_per_meter: 1800,
-          color: 'White',
-          stock: 75,
-          images_json: ['https://images.pexels.com/photos/6069102/pexels-photo-6069102.jpeg'],
-          featured: false,
-          description: 'Finest Egyptian cotton for comfortable everyday wear',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ]
+      const { data, error } = await supabase
+        .from('fabrics')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
       
-      setFabrics(sampleFabrics)
+      setFabrics(data || [])
     } catch (error) {
       console.error('Error fetching fabrics:', error)
     } finally {
@@ -95,11 +73,67 @@ export function AdminFabrics() {
   const materials = [...new Set(fabrics.map(f => f.material))]
 
   const toggleFeatured = async (fabricId: string) => {
-    setFabrics(fabrics.map(fabric => 
-      fabric.id === fabricId 
-        ? { ...fabric, featured: !fabric.featured }
-        : fabric
-    ))
+    try {
+      const fabric = fabrics.find(f => f.id === fabricId)
+      if (!fabric) return
+
+      const { error } = await supabase
+        .from('fabrics')
+        .update({ featured: !fabric.featured })
+        .eq('id', fabricId)
+
+      if (error) throw error
+
+      setFabrics(fabrics.map(f => 
+        f.id === fabricId 
+          ? { ...f, featured: !f.featured }
+          : f
+      ))
+    } catch (error) {
+      console.error('Error updating fabric:', error)
+    }
+  }
+
+  const handleAddFabric = async () => {
+    try {
+      if (!newFabric.name || !newFabric.material || !newFabric.color) {
+        alert('Please fill in all required fields')
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('fabrics')
+        .insert({
+          name: newFabric.name,
+          material: newFabric.material,
+          price_per_meter: newFabric.price_per_meter,
+          color: newFabric.color,
+          stock: newFabric.stock,
+          description: newFabric.description,
+          featured: newFabric.featured,
+          images_json: newFabric.images_json.filter(img => img.trim() !== '')
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setFabrics([data, ...fabrics])
+      setIsAddModalOpen(false)
+      setNewFabric({
+        name: '',
+        material: '',
+        price_per_meter: 0,
+        color: '',
+        stock: 0,
+        description: '',
+        featured: false,
+        images_json: ['']
+      })
+    } catch (error) {
+      console.error('Error adding fabric:', error)
+      alert('Error adding fabric. Please try again.')
+    }
   }
 
   if (loading) {
@@ -120,7 +154,7 @@ export function AdminFabrics() {
         </div>
         <Button>
           <Plus className="w-4 h-4 mr-2" />
-          Add New Fabric
+          <span onClick={() => setIsAddModalOpen(true)}>Add New Fabric</span>
         </Button>
       </div>
 
@@ -285,6 +319,87 @@ export function AdminFabrics() {
           <p className="text-gray-500">Try adjusting your search criteria</p>
         </Card>
       )}
+
+      {/* Add Fabric Modal */}
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="Add New Fabric"
+      >
+        <div className="space-y-4">
+          <Input
+            label="Fabric Name *"
+            value={newFabric.name}
+            onChange={(e) => setNewFabric({...newFabric, name: e.target.value})}
+            placeholder="Enter fabric name"
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Material *"
+              value={newFabric.material}
+              onChange={(e) => setNewFabric({...newFabric, material: e.target.value})}
+              placeholder="e.g., Silk, Cotton, Wool"
+            />
+            <Input
+              label="Color *"
+              value={newFabric.color}
+              onChange={(e) => setNewFabric({...newFabric, color: e.target.value})}
+              placeholder="e.g., Golden, Navy Blue"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Price per Meter (₹)"
+              type="number"
+              value={newFabric.price_per_meter}
+              onChange={(e) => setNewFabric({...newFabric, price_per_meter: parseInt(e.target.value) || 0})}
+              placeholder="0"
+            />
+            <Input
+              label="Stock (meters)"
+              type="number"
+              value={newFabric.stock}
+              onChange={(e) => setNewFabric({...newFabric, stock: parseInt(e.target.value) || 0})}
+              placeholder="0"
+            />
+          </div>
+          <Input
+            label="Image URL"
+            value={newFabric.images_json[0]}
+            onChange={(e) => setNewFabric({...newFabric, images_json: [e.target.value]})}
+            placeholder="https://example.com/image.jpg"
+          />
+          <div>
+            <label className="block text-sm font-medium text-[#1A1D23] mb-2">
+              Description
+            </label>
+            <textarea
+              value={newFabric.description}
+              onChange={(e) => setNewFabric({...newFabric, description: e.target.value})}
+              placeholder="Describe the fabric..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C8A951]"
+              rows={3}
+            />
+          </div>
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={newFabric.featured}
+              onChange={(e) => setNewFabric({...newFabric, featured: e.target.checked})}
+              className="rounded border-gray-300 text-[#C8A951] focus:ring-[#C8A951]"
+            />
+            <span className="text-sm text-[#1A1D23]">Featured fabric</span>
+          </label>
+          <div className="flex space-x-3 pt-4">
+            <Button onClick={handleAddFabric} className="flex-1">
+              Add Fabric
+            </Button>
+            <Button variant="outline" onClick={() => setIsAddModalOpen(false)} className="flex-1">
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Search, Plus, Edit, Eye, Package } from 'lucide-react'
+import { Search, Plus, Edit, Eye, Package, X } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
 import { Input } from '../../components/ui/Input'
 import { Card } from '../../components/ui/Card'
+import { Modal } from '../../components/ui/Modal'
+import { supabase } from '../../lib/supabase'
 import { Garment } from '../../types'
 
 export function AdminProducts() {
@@ -12,6 +14,15 @@ export function AdminProducts() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [newGarment, setNewGarment] = useState({
+    name: '',
+    category: '',
+    base_price: 0,
+    description: '',
+    image_url: '',
+    customization_options: {}
+  })
 
   useEffect(() => {
     fetchGarments()
@@ -23,54 +34,14 @@ export function AdminProducts() {
 
   const fetchGarments = async () => {
     try {
-      // Sample garment data
-      const sampleGarments = [
-        {
-          id: '1',
-          name: 'Classic Shirt',
-          category: 'Shirts',
-          base_price: 1500,
-          description: 'Timeless classic shirt perfect for office and casual wear',
-          image_url: 'https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg',
-          customization_options: {
-            collar: ['Regular', 'Button Down', 'Spread', 'Cutaway'],
-            sleeves: ['Full Sleeve', 'Half Sleeve', 'Quarter Sleeve'],
-            fit: ['Regular', 'Slim', 'Relaxed']
-          },
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          name: 'Business Suit',
-          category: 'Suits',
-          base_price: 8500,
-          description: 'Professional business suit for formal occasions',
-          image_url: 'https://images.pexels.com/photos/1043474/pexels-photo-1043474.jpeg',
-          customization_options: {
-            jacket: ['Single Breasted', 'Double Breasted'],
-            lapels: ['Notch', 'Peak', 'Shawl']
-          },
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: '3',
-          name: 'Wedding Sherwani',
-          category: 'Sherwanis',
-          base_price: 12000,
-          description: 'Elegant sherwani for weddings and special occasions',
-          image_url: 'https://images.pexels.com/photos/1043473/pexels-photo-1043473.jpeg',
-          customization_options: {
-            collar: ['Band', 'High Neck', 'Nehru'],
-            embroidery: ['None', 'Light', 'Heavy']
-          },
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ]
+      const { data, error } = await supabase
+        .from('garments')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
       
-      setGarments(sampleGarments)
+      setGarments(data || [])
     } catch (error) {
       console.error('Error fetching garments:', error)
     } finally {
@@ -96,6 +67,44 @@ export function AdminProducts() {
   }
 
   const categories = [...new Set(garments.map(g => g.category))]
+
+  const handleAddGarment = async () => {
+    try {
+      if (!newGarment.name || !newGarment.category) {
+        alert('Please fill in all required fields')
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('garments')
+        .insert({
+          name: newGarment.name,
+          category: newGarment.category,
+          base_price: newGarment.base_price,
+          description: newGarment.description,
+          image_url: newGarment.image_url,
+          customization_options: newGarment.customization_options
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setGarments([data, ...garments])
+      setIsAddModalOpen(false)
+      setNewGarment({
+        name: '',
+        category: '',
+        base_price: 0,
+        description: '',
+        image_url: '',
+        customization_options: {}
+      })
+    } catch (error) {
+      console.error('Error adding garment:', error)
+      alert('Error adding garment. Please try again.')
+    }
+  }
 
   if (loading) {
     return (
@@ -240,6 +249,63 @@ export function AdminProducts() {
           <p className="text-gray-500">Try adjusting your search criteria</p>
         </Card>
       )}
+
+      {/* Add Garment Modal */}
+      <Modal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title="Add New Garment"
+      >
+        <div className="space-y-4">
+          <Input
+            label="Garment Name *"
+            value={newGarment.name}
+            onChange={(e) => setNewGarment({...newGarment, name: e.target.value})}
+            placeholder="Enter garment name"
+          />
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Category *"
+              value={newGarment.category}
+              onChange={(e) => setNewGarment({...newGarment, category: e.target.value})}
+              placeholder="e.g., Shirts, Suits, Kurtas"
+            />
+            <Input
+              label="Base Price (₹)"
+              type="number"
+              value={newGarment.base_price}
+              onChange={(e) => setNewGarment({...newGarment, base_price: parseInt(e.target.value) || 0})}
+              placeholder="0"
+            />
+          </div>
+          <Input
+            label="Image URL"
+            value={newGarment.image_url}
+            onChange={(e) => setNewGarment({...newGarment, image_url: e.target.value})}
+            placeholder="https://example.com/image.jpg"
+          />
+          <div>
+            <label className="block text-sm font-medium text-[#1A1D23] mb-2">
+              Description
+            </label>
+            <textarea
+              value={newGarment.description}
+              onChange={(e) => setNewGarment({...newGarment, description: e.target.value})}
+              placeholder="Describe the garment..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#C8A951]"
+              rows={3}
+            />
+          </div>
+          <div className="flex space-x-3 pt-4">
+            <Button onClick={handleAddGarment} className="flex-1">
+              Add Garment
+            </Button>
+            <Button variant="outline" onClick={() => setIsAddModalOpen(false)} className="flex-1">
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

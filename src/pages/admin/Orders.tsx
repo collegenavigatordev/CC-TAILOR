@@ -50,63 +50,7 @@ export function AdminOrders() {
 
       if (error) throw error
 
-      // Add sample data if no orders exist
-      if (!data || data.length === 0) {
-        const sampleOrders = [
-          {
-            id: '1',
-            customer_id: '1',
-            fabric_id: '1',
-            garment_id: '1',
-            tracking_id: 'RT2025001',
-            customizations_json: { fit: 'slim', collar: 'spread' },
-            measurements_json: { chest: 40, waist: 34 },
-            price: 6800,
-            status: 'stitching',
-            urgent: false,
-            special_instructions: 'Please ensure perfect fit',
-            estimated_completion: '2025-01-25',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            customer: {
-              id: '1',
-              name: 'Rajesh Kumar',
-              phone: '+91 98765 43210',
-              email: 'rajesh@email.com',
-              measurements_json: {},
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            },
-            fabric: {
-              id: '1',
-              name: 'Premium Silk',
-              material: 'Silk',
-              price_per_meter: 2500,
-              color: 'Golden',
-              stock: 50,
-              images_json: [],
-              featured: true,
-              description: '',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            },
-            garment: {
-              id: '1',
-              name: 'Classic Shirt',
-              category: 'Shirts',
-              base_price: 1500,
-              description: '',
-              image_url: '',
-              customization_options: {},
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }
-          }
-        ]
-        setOrders(sampleOrders)
-      } else {
-        setOrders(data)
-      }
+      setOrders(data || [])
     } catch (error) {
       console.error('Error fetching orders:', error)
     } finally {

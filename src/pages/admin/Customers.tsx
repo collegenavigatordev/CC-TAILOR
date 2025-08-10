@@ -30,53 +30,7 @@ export function AdminCustomers() {
 
       if (error) throw error
 
-      // Add sample data if no customers exist
-      if (!data || data.length === 0) {
-        const sampleCustomers = [
-          {
-            id: '1',
-            name: 'Rajesh Kumar',
-            phone: '+91 98765 43210',
-            email: 'rajesh@email.com',
-            measurements_json: {
-              chest: 40,
-              waist: 34,
-              shoulder: 18
-            },
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          {
-            id: '2',
-            name: 'Priya Sharma',
-            phone: '+91 87654 32109',
-            email: 'priya@email.com',
-            measurements_json: {
-              bust: 36,
-              waist: 28,
-              hips: 38
-            },
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          {
-            id: '3',
-            name: 'Amit Patel',
-            phone: '+91 76543 21098',
-            email: 'amit@email.com',
-            measurements_json: {
-              chest: 42,
-              waist: 36,
-              shoulder: 19
-            },
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        ]
-        setCustomers(sampleCustomers)
-      } else {
-        setCustomers(data)
-      }
+      setCustomers(data || [])
     } catch (error) {
       console.error('Error fetching customers:', error)
     } finally {

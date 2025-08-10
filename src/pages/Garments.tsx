@@ -24,103 +24,14 @@ export function Garments() {
 
   const fetchGarments = async () => {
     try {
-      // Sample garment data
-      const sampleGarments = [
-        {
-          id: '1',
-          name: 'Classic Shirt',
-          category: 'Shirts',
-          base_price: 1500,
-          description: 'Timeless classic shirt perfect for office and casual wear',
-          image_url: 'https://images.pexels.com/photos/996329/pexels-photo-996329.jpeg',
-          customization_options: {
-            collar: ['Regular', 'Button Down', 'Spread', 'Cutaway'],
-            sleeves: ['Full Sleeve', 'Half Sleeve', 'Quarter Sleeve'],
-            fit: ['Regular', 'Slim', 'Relaxed'],
-            cuffs: ['Regular', 'French', 'Convertible'],
-            pockets: ['None', 'Single', 'Double']
-          },
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '2',
-          name: 'Business Suit',
-          category: 'Suits',
-          base_price: 8500,
-          description: 'Professional business suit for formal occasions',
-          image_url: 'https://images.pexels.com/photos/1043474/pexels-photo-1043474.jpeg',
-          customization_options: {
-            jacket: ['Single Breasted', 'Double Breasted'],
-            lapels: ['Notch', 'Peak', 'Shawl'],
-            buttons: ['2 Button', '3 Button'],
-            vents: ['No Vent', 'Single Vent', 'Double Vent'],
-            trouser: ['Flat Front', 'Pleated']
-          },
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '3',
-          name: 'Wedding Sherwani',
-          category: 'Sherwanis',
-          base_price: 12000,
-          description: 'Elegant sherwani for weddings and special occasions',
-          image_url: 'https://images.pexels.com/photos/1043473/pexels-photo-1043473.jpeg',
-          customization_options: {
-            collar: ['Band', 'High Neck', 'Nehru'],
-            length: ['Knee Length', 'Mid Thigh', 'Full Length'],
-            buttons: ['Traditional', 'Modern', 'Decorative'],
-            embroidery: ['None', 'Light', 'Heavy', 'Custom Design']
-          },
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '4',
-          name: 'Saree Blouse',
-          category: 'Saree Blouses',
-          base_price: 2500,
-          description: 'Custom fitted saree blouse with various neckline options',
-          image_url: 'https://images.pexels.com/photos/8849295/pexels-photo-8849295.jpeg',
-          customization_options: {
-            neckline: ['Round', 'V-Neck', 'Square', 'Boat', 'Halter'],
-            sleeves: ['Sleeveless', 'Cap Sleeve', 'Half Sleeve', 'Full Sleeve'],
-            back: ['Regular', 'Deep Back', 'Keyhole', 'Tie-up'],
-            embellishment: ['None', 'Beadwork', 'Embroidery', 'Sequins']
-          },
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '5',
-          name: 'Casual Kurta',
-          category: 'Kurtas',
-          base_price: 1800,
-          description: 'Comfortable kurta for daily wear and casual occasions',
-          image_url: 'https://images.pexels.com/photos/1043474/pexels-photo-1043474.jpeg',
-          customization_options: {
-            collar: ['Band', 'Nehru', 'Chinese'],
-            length: ['Short', 'Medium', 'Long'],
-            sleeves: ['Full Sleeve', 'Half Sleeve', 'Quarter Sleeve'],
-            bottom: ['Straight', 'A-Line', 'Asymmetric']
-          },
-          created_at: new Date().toISOString()
-        },
-        {
-          id: '6',
-          name: 'Evening Dress',
-          category: 'Dresses',
-          base_price: 6500,
-          description: 'Elegant evening dress for special occasions',
-          image_url: 'https://images.pexels.com/photos/985635/pexels-photo-985635.jpeg',
-          customization_options: {
-            neckline: ['Strapless', 'Halter', 'V-Neck', 'Off-Shoulder'],
-            length: ['Knee Length', 'Midi', 'Floor Length'],
-            fit: ['A-Line', 'Mermaid', 'Straight', 'Ball Gown'],
-            back: ['Zipper', 'Lace-up', 'Open Back']
-          },
-          created_at: new Date().toISOString()
-        }
-      ]
+      const { data, error } = await supabase
+        .from('garments')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
       
-      setGarments(sampleGarments)
+      setGarments(data || [])
     } catch (error) {
       console.error('Error fetching garments:', error)
     } finally {

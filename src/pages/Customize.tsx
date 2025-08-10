@@ -65,27 +65,47 @@ export function Customize() {
     const garmentId = searchParams.get('garment')
     
     if (fabricId) {
-      // Load fabric data
-      const sampleFabric = {
-        id: fabricId,
-        name: 'Premium Silk',
-        price_per_meter: 2500,
-        color: 'Golden'
-      }
-      setOrderData(prev => ({ ...prev, fabric: sampleFabric }))
+      fetchFabric(fabricId)
     }
     
     if (garmentId) {
-      // Load garment data
-      const sampleGarment = {
-        id: garmentId,
-        name: 'Classic Shirt',
-        base_price: 1500,
-        category: 'Shirts'
-      }
-      setOrderData(prev => ({ ...prev, garment: sampleGarment }))
+      fetchGarment(garmentId)
     }
   }, [searchParams])
+
+  const fetchFabric = async (fabricId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('fabrics')
+        .select('*')
+        .eq('id', fabricId)
+        .single()
+
+      if (error) throw error
+      if (data) {
+        setOrderData(prev => ({ ...prev, fabric: data }))
+      }
+    } catch (error) {
+      console.error('Error fetching fabric:', error)
+    }
+  }
+
+  const fetchGarment = async (garmentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('garments')
+        .select('*')
+        .eq('id', garmentId)
+        .single()
+
+      if (error) throw error
+      if (data) {
+        setOrderData(prev => ({ ...prev, garment: data }))
+      }
+    } catch (error) {
+      console.error('Error fetching garment:', error)
+    }
+  }
 
   const handleNext = () => {
     if (currentStep < 5) {
@@ -131,6 +151,17 @@ export function Customize() {
 
   const handlePlaceOrder = async () => {
     try {
+      // Validate required fields
+      if (!orderData.customer.name || !orderData.customer.phone || !orderData.customer.email) {
+        alert('Please fill in all required customer details')
+        return
+      }
+
+      if (!orderData.fabric || !orderData.garment) {
+        alert('Please select both fabric and garment')
+        return
+      }
+
       // Create customer first
       const { data: customerData, error: customerError } = await supabase
         .from('customers')
@@ -145,17 +176,13 @@ export function Customize() {
 
       if (customerError) throw customerError
 
-      // Generate tracking ID
-      const trackingId = 'RT' + Date.now().toString().slice(-6)
-
       // Create order
       const { data: orderDataResult, error: orderError } = await supabase
         .from('orders')
         .insert({
           customer_id: customerData.id,
-          fabric_id: orderData.fabric?.id || '1',
-          garment_id: orderData.garment?.id || '1',
-          tracking_id: trackingId,
+          fabric_id: orderData.fabric.id,
+          garment_id: orderData.garment.id,
           customizations_json: orderData.customizations,
           measurements_json: orderData.measurements,
           price: calculateTotalPrice(),
@@ -170,10 +197,10 @@ export function Customize() {
       if (orderError) throw orderError
 
       // Navigate to confirmation page
-      navigate(`/order-confirmation/${trackingId}`)
+      navigate(`/order-confirmation/${orderDataResult.tracking_id}`)
     } catch (error) {
       console.error('Error placing order:', error)
-      alert('Error placing order. Please try again.')
+      alert(`Error placing order: ${error.message}. Please try again.`)
     }
   }
 

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, ShoppingBag, Star, Clock, Truck, Palette } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { supabase } from '../lib/supabase'
 import { Garment } from '../types'
 
 export function GarmentDetail() {

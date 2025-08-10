@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft, ShoppingBag, ZoomIn as Zoom, Star, Clock, Truck } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { supabase } from '../lib/supabase'
 import { Fabric } from '../types'
 
 export function FabricDetail() {
@@ -13,44 +14,23 @@ export function FabricDetail() {
   const [isZoomed, setIsZoomed] = useState(false)
 
   useEffect(() => {
-    // Sample fabric data - in real app, fetch from Supabase
-    const sampleFabrics = [
-      {
-        id: '1',
-        name: 'Premium Silk',
-        material: 'Silk',
-        price_per_meter: 2500,
-        color: 'Golden',
-        stock: 50,
-        images_json: [
-          'https://images.pexels.com/photos/6069107/pexels-photo-6069107.jpeg',
-          'https://images.pexels.com/photos/8849295/pexels-photo-8849295.jpeg',
-          'https://images.pexels.com/photos/6069108/pexels-photo-6069108.jpeg'
-        ],
-        featured: true,
-        description: 'Luxurious silk fabric perfect for wedding wear and special occasions. This premium quality silk features a beautiful golden sheen and smooth texture that drapes elegantly.',
-        created_at: new Date().toISOString()
-      },
-      {
-        id: '2',
-        name: 'Italian Wool',
-        material: 'Wool',
-        price_per_meter: 3200,
-        color: 'Navy Blue',
-        stock: 30,
-        images_json: [
-          'https://images.pexels.com/photos/7679720/pexels-photo-7679720.jpeg',
-          'https://images.pexels.com/photos/7679717/pexels-photo-7679717.jpeg'
-        ],
-        featured: true,
-        description: 'Premium Italian wool for sophisticated suits and formal wear. Sourced from the finest mills in Italy, this wool offers exceptional durability and comfort.',
-        created_at: new Date().toISOString()
-      }
-    ]
-
-    const foundFabric = sampleFabrics.find(f => f.id === id)
-    setFabric(foundFabric || sampleFabrics[0])
+    fetchFabric()
   }, [id])
+
+  const fetchFabric = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('fabrics')
+        .select('*')
+        .eq('id', id)
+        .single()
+
+      if (error) throw error
+      setFabric(data)
+    } catch (error) {
+      console.error('Error fetching fabric:', error)
+    }
+  }
 
   if (!fabric) {
     return (
